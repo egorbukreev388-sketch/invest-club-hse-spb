@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { readSheet } from './googleSheets';
 
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN || '';
 const TELEGRAM_API_URL = `https://api.telegram.org/bot${TELEGRAM_TOKEN}`;
