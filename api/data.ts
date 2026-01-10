@@ -1,48 +1,67 @@
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { GoogleSpreadsheet } from 'google-spreadsheet';
+import { JWT } from 'google-auth-library';
 
-// This function simulates the Google Sheets logic. 
-// In a production environment, you would use 'google-spreadsheet' or fetch Google API.
+const SPREADSHEET_ID = process.env.GOOGLE_SHEETS_ID;
+const GOOGLE_SERVICE_ACCOUNT_KEY = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+
+async function getDoc() {
+  const credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_KEY!);
+  const serviceAccountAuth = new JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+  });
+
+  const doc = new GoogleSpreadsheet(SPREADSHEET_ID!, serviceAccountAuth);
+  await doc.loadInfo();
+  return doc;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { type, id } = req.query;
+  try {
+    const { type } = req.query;
+    const doc = await getDoc();
 
-  // Verify Admin (Ideally using a JWT or session, but using simple check for Egor as requested)
-  // For standard GET/POST from frontend, you should check auth headers.
+    if (req.method === 'GET') {
+      if (type === 'quizzes') {
+        const sheet = doc.sheetsByTitle['Quizzes'] || doc.sheetsByIndex[0];
+        const rows = await sheet.getRows();
+        const quizzes = rows.map(row => ({
+          id: row.get('id'),
+          title: row.get('title'),
+          description: row.get('description'),
+          questions: JSON.parse(row.get('questions') || '[]'),
+          createdAt: row.get('createdAt')
+        }));
+        return res.status(200).json(quizzes);
+      }
 
-  if (req.method === 'GET') {
-    if (type === 'quizzes') {
-      // In reality: Fetch from Google Sheet "Quizzes"
-      return res.status(200).json([
-        {
-          id: '1',
-          title: 'Основы инвестирования',
-          description: 'Проверьте свои базовые знания о фондовом рынке.',
-          createdAt: new Date().toISOString(),
-          questions: [
-            { id: 'q1', text: 'Что такое акция?', options: ['Доля в компании', 'Долговое обязательство', 'Валюта'], correctIndex: 0 },
-            { id: 'q2', text: 'Как называется распределение прибыли компании?', options: ['Кешбэк', 'Дивиденды', 'Кэш-флоу'], correctIndex: 1 }
-          ]
-        }
-      ]);
+      if (type === 'users') {
+        const sheet = doc.sheetsByTitle['Users'] || doc.sheetsByIndex[1];
+        const rows = await sheet.getRows();
+        const users = rows.map(row => ({
+          id: row.get('id'),
+          userId: row.get('userId'),
+          firstName: row.get('firstName'),
+          lastName: row.get('lastName'),
+          sheet: row.get('sheet') || 'Main',
+          status: row.get('status') || 'active',
+          timestamp: row.get('timestamp')
+        }));
+        return res.status(200).json(users);
+      }
     }
 
-    if (type === 'users') {
-      // In reality: Fetch from Google Sheet "Users"
-      return res.status(200).json([
-        { id: '1', userId: '1558532545', firstName: 'Egor', lastName: 'Invest', sheet: 'Main', status: 'active', timestamp: '2023-10-01' }
-      ]);
+    if (req.method === 'POST') {
+      // Здесь можно добавить логику записи
+      return res.status(200).json({ success: true });
     }
-  }
 
-  if (req.method === 'POST') {
-    // Logic to save to Google Sheets
-    return res.status(200).json({ success: true });
+    return res.status(405).json({ message: 'Method Not Allowed' });
+  } catch (error: any) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
   }
-
-  if (req.method === 'DELETE') {
-    // Logic to delete from Google Sheets
-    return res.status(200).json({ success: true });
-  }
-
-  return res.status(405).json({ message: 'Method not allowed' });
 }
