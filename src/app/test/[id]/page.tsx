@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
-import { getAllTests, saveTestResult } from '@/lib/googleSheets';
 
 export default function TakeTestPage() {
   const { id } = useParams();
@@ -12,18 +11,28 @@ export default function TakeTestPage() {
   const [submitted, setSubmitted] = useState(false);
 
   useEffect(() => {
-    const loadTest = async () => {
-      const tests = await getAllTests();
-      if (testId >= 0 && testId < tests.length) {
-        setTest(tests[testId]);
-        setAnswers(Array(tests[testId].questions.length).fill(null));
-      }
-    };
-    loadTest();
+    fetch('/api/tests/list')
+      .then(res => res.json())
+      .then(tests => {
+        if (testId >= 0 && testId < tests.length) {
+          setTest(tests[testId]);
+          setAnswers(Array(tests[testId].questions.length).fill(null));
+        }
+      });
   }, [testId]);
 
-  const handleAnswer = (qIndex: number, answer: any) => { const newAnswers = [...answers]; newAnswers[qIndex] = answer; setAnswers(newAnswers); };
-  const handleSubmit = async () => { const userId = 'anonymous'; await saveTestResult(testId + 1, userId, answers); setSubmitted(true); };
+  const handleSubmit = async () => {
+    await fetch('/api/tests/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        testId: testId + 1,
+        userId: 'anonymous',
+        answers,
+      }),
+    });
+    setSubmitted(true);
+  };
 
   if (!test) return <div>Загрузка...</div>;
   if (submitted) return <div className="card text-center">✅ Спасибо! Тест отправлен.</div>;
@@ -36,13 +45,29 @@ export default function TakeTestPage() {
           <p className="mb-2">{idx + 1}. {q.text}</p>
           {q.options?.map((opt: string, optIdx: number) => (
             <label key={optIdx} className="block mb-1">
-              <input type="radio" name={`q${idx}`} checked={answers[idx] === opt} onChange={() => handleAnswer(idx, opt)} className="mr-2" />
+              <input
+                type="radio"
+                name={`q${idx}`}
+                checked={answers[idx] === opt}
+                onChange={() => setAnswers(prev => {
+                  const newArr = [...prev];
+                  newArr[idx] = opt;
+                  return newArr;
+                })}
+                className="mr-2"
+              />
               {opt}
             </label>
           ))}
         </div>
       ))}
-      <button onClick={handleSubmit} disabled={answers.some(a => a === null)} className="btn-primary w-full">Отправить результат</button>
+      <button
+        onClick={handleSubmit}
+        disabled={answers.some(a => a === null)}
+        className="btn-primary w-full"
+      >
+        Отправить результат
+      </button>
     </div>
   );
 }
