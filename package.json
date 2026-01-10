@@ -3,6 +3,7 @@
   "name": "invest-club-hse-spb",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,10 +12,9 @@
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "@google/genai": "^0.21.0",
     "google-spreadsheet": "^4.1.4",
-    "googleapis": "^144.0.0",
-    "node-fetch": "^3.3.2"
+    "google-auth-library": "^9.15.0",
+    "googleapis": "^144.0.0"
   },
   "devDependencies": {
     "@types/react": "^19.0.0",
