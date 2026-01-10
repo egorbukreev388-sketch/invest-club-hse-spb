@@ -1,34 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage } from '@/lib/telegram';
 
 export async function POST(req: NextRequest) {
+  // Просто подтверждаем получение — без работы с таблицами
   try {
     const update = await req.json();
-
-    if (update.callback_query) {
-      const chatId = String(update.callback_query.from.id);
-      const data = update.callback_query.data as string;
-      if (data.startsWith('attendance_')) {
-        const [, , targetChatId] = data.split('_');
-        const recordText = data.includes('yes') ? '✅ Придет' : '❌ Не придет';
-        await updateAttendance(targetChatId, recordText);
-        await sendMessage(targetChatId, data.includes('yes') ? '🎉 Супер! Ждем тебя!' : '😢 Жаль, что не сможешь прийти!');
-      }
-      return NextResponse.json({ ok: true });
-    }
-
-    if (!update.message) return NextResponse.json({ ok: true });
-
-    const chatId = String(update.message.chat.id);
-    const text = update.message.text || '';
-
-    if (text === '/start') {
-      await sendMessage(chatId, 'Привет! Добро пожаловать в Invest Club HSE SPB!');
-    }
-
+    console.log('Webhook received:', update.message?.text || 'callback');
     return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('Ошибка вебхука:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  } catch (e) {
+    return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
   }
 }
