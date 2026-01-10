@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  // Опционально: если нужны дополнительные настройки webpack для алиасов
+  // webpack: (config) => {
+  //   return config;
+  // },
 }
 
-export default nextConfig
+export default nextConfig;
