@@ -4,25 +4,18 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') return res.status(405).json({ message: 'Only POST allowed' });
+  if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
   const { group, userId, message } = req.body;
 
-  if (!TELEGRAM_TOKEN) {
-    return res.status(500).json({ message: 'TELEGRAM_TOKEN not configured' });
-  }
+  if (!TELEGRAM_TOKEN) return res.status(500).json({ error: 'Token missing' });
 
   try {
-    let targets = [];
-
-    if (userId) {
-      targets = [userId];
-    } else if (group) {
-      // Logic: Fetch all user IDs from Google Sheet that belong to 'group'
-      // Mocking 1 user for demo
-      targets = ['1558532545']; 
-    }
-
+    const targets = userId ? [userId] : [];
+    
+    // В реальном приложении здесь был бы поиск всех ID по группе в Google Sheets
+    // Если userId нет, но есть group, мы бы достали список из таблицы Users
+    
     for (const id of targets) {
       await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
         method: 'POST',
@@ -35,8 +28,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    return res.status(200).json({ success: true, count: targets.length });
+    return res.status(200).json({ success: true });
   } catch (error: any) {
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ error: error.message });
   }
 }
