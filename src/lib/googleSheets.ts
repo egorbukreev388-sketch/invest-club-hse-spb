@@ -123,3 +123,4 @@ export async function deleteTest(index: number): Promise<void> {
 export async function saveTestResult(testId: number, userId: string, answers: any[]): Promise<void> {
   await appendToSheet('TestResults', [testId, userId, JSON.stringify(answers), new Date().toISOString()]);
 }
+
