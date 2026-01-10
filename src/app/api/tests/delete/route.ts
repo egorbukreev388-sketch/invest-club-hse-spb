@@ -22,8 +22,8 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid test ID' }, { status: 400 });
     }
 
-    // Индекс строки в Google Sheets: заголовок (1) + тесты (начинаются с 2)
-    const rowIndex = testIndex + 1; // потому что первая строка — заголовок
+    // Индекс строки в Google Таблице: заголовок (1) + тесты (начинаются с 2)
+    const rowIndex = testIndex + 1;
 
     const credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_KEY);
     const auth = new google.auth.GoogleAuth({
