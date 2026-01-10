@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateAttendance } from '@/lib/googleSheets';
 import { sendMessage } from '@/lib/telegram';
 
 export async function POST(req: NextRequest) {
